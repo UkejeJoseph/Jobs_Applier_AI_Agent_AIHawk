@@ -1,0 +1,23 @@
+# Sensitive files - DO NOT COMMIT
+cookies/
+linkedin_bot/config/secrets.py
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+
+# Downloaded models
+*.pt
+*.onnx

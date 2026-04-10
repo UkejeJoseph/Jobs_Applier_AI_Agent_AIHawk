@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics - AutoApply{% endblock %}
+
+{% block content %}
+<div class="p-6 space-y-6">
+    <!-- Header -->
+    <div>
+        <h1 class="text-2xl font-bold text-slate-800">Statistics</h1>
+        <p class="text-slate-500">Your job application metrics and progress</p>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm text-center">
+            <p class="text-4xl font-bold text-slate-800">{{ stats.total_jobs or 0 }}</p>
+            <p class="text-sm text-slate-500 mt-1">Total Jobs Tracked</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm text-center">
+            <p class="text-4xl font-bold text-green-600">{{ stats.by_status.Applied or 0 }}</p>
+            <p class="text-sm text-slate-500 mt-1">Applications Sent</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm text-center">
+            <p class="text-4xl font-bold text-purple-600">{{ stats.visa_sponsored or 0 }}</p>
+            <p class="text-sm text-slate-500 mt-1">Visa Sponsored</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm text-center">
+            <p class="text-4xl font-bold text-orange-600">{{ stats.by_status.Interview or 0 }}</p>
+            <p class="text-sm text-slate-500 mt-1">In Interview</p>
+        </div>
+    </div>
+
+    <!-- Application Progress -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold text-slate-800">Daily Application Progress</h2>
+            <span class="text-sm text-slate-500">{{ stats.applied_today or 0 }} / 30 today</span>
+        </div>
+        <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+            {% set pct = ((stats.applied_today or 0) / 30 * 100)|int %}
+            <div class="bg-gradient-to-r from-primary-500 to-primary-600 h-4 rounded-full transition-all duration-500"
+                 style="width: {{ pct }}%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-slate-400 mt-2">
+            <span>0</span>
+            <span>15</span>
+            <span>30</span>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+        <!-- By Country -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-100">
+                <h2 class="font-semibold text-slate-800">Jobs by Country</h2>
+            </div>
+            <div class="p-4">
+                <div class="space-y-3">
+                    {% set countries = [
+                        ('US', 'USA', '🇺🇸', 'H1B Visa', 'blue'),
+                        ('UK', 'UK', '🇬🇧', 'Skilled Worker', 'indigo'),
+                        ('Canada', 'Canada', '🇨🇦', 'LMIA', 'red'),
+                        ('Nigeria', 'Nigeria', '🇳🇬', 'Remote', 'green')
+                    ] %}
+                    {% for code, name, flag, visa_type, color in countries %}
+                    {% set count = stats.by_country.get(code, 0) if stats.by_country else 0 %}
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">{{ flag }}</span>
+                            <div>
+                                <p class="font-medium text-slate-800">{{ name }}</p>
+                                <p class="text-xs text-slate-500">{{ visa_type }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-2xl font-bold text-slate-800">{{ count }}</span>
+                            <a href="/jobs/{{ code|lower }}"
+                               class="text-sm text-primary-600 hover:text-primary-700">
+                                View <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- By Status -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-100">
+                <h2 class="font-semibold text-slate-800">Jobs by Status</h2>
+            </div>
+            <div class="p-4">
+                <div class="space-y-3">
+                    {% set statuses = [
+                        ('Found', 'fas fa-search', 'blue', 'New opportunities'),
+                        ('Applied', 'fas fa-paper-plane', 'green', 'Applications sent'),
+                        ('Interview', 'fas fa-calendar-check', 'purple', 'In progress'),
+                        ('Offer', 'fas fa-trophy', 'emerald', 'Offers received'),
+                        ('Rejected', 'fas fa-times-circle', 'red', 'Not selected'),
+                        ('Skipped', 'fas fa-forward', 'slate', 'Passed on')
+                    ] %}
+                    {% for status, icon, color, desc in statuses %}
+                    {% set count = stats.by_status.get(status, 0) if stats.by_status else 0 %}
+                    <div class="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-{{ color }}-100 rounded-lg flex items-center justify-center">
+                                <i class="{{ icon }} text-{{ color }}-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-slate-800">{{ status }}</p>
+                                <p class="text-xs text-slate-500">{{ desc }}</p>
+                            </div>
+                        </div>
+                        <span class="text-2xl font-bold text-slate-800">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conversion Funnel -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <h2 class="font-semibold text-slate-800 mb-6">Application Funnel</h2>
+        {% set total = stats.total_jobs or 1 %}
+        {% set applied = stats.by_status.Applied or 0 if stats.by_status else 0 %}
+        {% set interview = stats.by_status.Interview or 0 if stats.by_status else 0 %}
+        {% set offer = stats.by_status.Offer or 0 if stats.by_status else 0 %}
+
+        <div class="flex items-center justify-between">
+            <!-- Found -->
+            <div class="flex-1 text-center">
+                <div class="w-full bg-blue-100 rounded-lg p-4">
+                    <p class="text-3xl font-bold text-blue-600">{{ total }}</p>
+                    <p class="text-sm text-blue-700">Found</p>
+                </div>
+            </div>
+
+            <div class="px-2 text-slate-300"><i class="fas fa-chevron-right"></i></div>
+
+            <!-- Applied -->
+            <div class="flex-1 text-center">
+                <div class="w-full bg-green-100 rounded-lg p-4">
+                    <p class="text-3xl font-bold text-green-600">{{ applied }}</p>
+                    <p class="text-sm text-green-700">Applied</p>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">{{ ((applied / total) * 100)|round(1) }}%</p>
+            </div>
+
+            <div class="px-2 text-slate-300"><i class="fas fa-chevron-right"></i></div>
+
+            <!-- Interview -->
+            <div class="flex-1 text-center">
+                <div class="w-full bg-purple-100 rounded-lg p-4">
+                    <p class="text-3xl font-bold text-purple-600">{{ interview }}</p>
+                    <p class="text-sm text-purple-700">Interview</p>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">{{ ((interview / (applied or 1)) * 100)|round(1) }}% of applied</p>
+            </div>
+
+            <div class="px-2 text-slate-300"><i class="fas fa-chevron-right"></i></div>
+
+            <!-- Offer -->
+            <div class="flex-1 text-center">
+                <div class="w-full bg-emerald-100 rounded-lg p-4">
+                    <p class="text-3xl font-bold text-emerald-600">{{ offer }}</p>
+                    <p class="text-sm text-emerald-700">Offers</p>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">{{ ((offer / (interview or 1)) * 100)|round(1) }}% of interviews</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

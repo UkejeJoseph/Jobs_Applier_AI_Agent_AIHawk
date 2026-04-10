@@ -1,0 +1,194 @@
+<!-- AI Chat Widget Component -->
+<!-- Include this in base.html with: {% include 'components/chat_widget.html' %} -->
+
+<div id="chat-widget" x-data="chatWidget()" x-cloak>
+    <!-- Chat Toggle Button -->
+    <button @click="open = !open"
+            class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-50"
+            :class="{ 'scale-0': open }">
+        <i class="fas fa-robot text-xl"></i>
+    </button>
+
+    <!-- Chat Window -->
+    <div x-show="open"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
+         class="fixed bottom-6 right-6 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col z-50 overflow-hidden">
+
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold">AutoApply AI</h3>
+                    <p class="text-xs text-primary-100">Your job search assistant</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button @click="clearChat()" class="p-2 hover:bg-white/10 rounded-lg transition-colors" title="Clear chat">
+                    <i class="fas fa-trash-alt text-sm"></i>
+                </button>
+                <button @click="open = false" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="p-3 border-b border-slate-100 flex gap-2 overflow-x-auto">
+            <button @click="sendQuickAction('Show job stats')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-full text-xs font-medium text-slate-700 whitespace-nowrap transition-colors">
+                <i class="fas fa-chart-bar mr-1"></i> Stats
+            </button>
+            <button @click="sendQuickAction('Find high priority jobs')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-full text-xs font-medium text-slate-700 whitespace-nowrap transition-colors">
+                <i class="fas fa-star mr-1"></i> Top Jobs
+            </button>
+            <button @click="sendQuickAction('Start scraping')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-full text-xs font-medium text-slate-700 whitespace-nowrap transition-colors">
+                <i class="fas fa-search mr-1"></i> Scrape
+            </button>
+            <button @click="sendQuickAction('Suggest improvements')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-full text-xs font-medium text-slate-700 whitespace-nowrap transition-colors">
+                <i class="fas fa-lightbulb mr-1"></i> Ideas
+            </button>
+        </div>
+
+        <!-- Messages -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="chat-messages" x-ref="messagesContainer">
+            <!-- Welcome Message -->
+            <template x-if="messages.length === 0">
+                <div class="text-center py-8">
+                    <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-robot text-primary-600 text-2xl"></i>
+                    </div>
+                    <h4 class="font-medium text-slate-800 mb-2">How can I help you?</h4>
+                    <p class="text-sm text-slate-500">Ask me about jobs, suggest improvements, or get help with your job search.</p>
+                </div>
+            </template>
+
+            <!-- Message List -->
+            <template x-for="(msg, index) in messages" :key="index">
+                <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                    <div :class="msg.role === 'user'
+                        ? 'bg-primary-600 text-white rounded-2xl rounded-br-md px-4 py-2 max-w-[80%]'
+                        : 'bg-slate-100 text-slate-800 rounded-2xl rounded-bl-md px-4 py-2 max-w-[80%]'">
+                        <p class="text-sm whitespace-pre-wrap" x-text="msg.content"></p>
+                        <p class="text-xs mt-1 opacity-60" x-text="msg.time"></p>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Typing Indicator -->
+            <div x-show="isTyping" class="flex justify-start">
+                <div class="bg-slate-100 rounded-2xl rounded-bl-md px-4 py-3">
+                    <div class="flex gap-1">
+                        <span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                        <span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                        <span class="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div class="p-4 border-t border-slate-200 bg-slate-50">
+            <form @submit.prevent="sendMessage()" class="flex gap-2">
+                <input type="text"
+                       x-model="inputMessage"
+                       placeholder="Ask me anything..."
+                       class="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                       :disabled="isTyping">
+                <button type="submit"
+                        class="px-4 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50"
+                        :disabled="!inputMessage.trim() || isTyping">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+            <p class="text-xs text-slate-400 mt-2 text-center">
+                Powered by Claude AI
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+function chatWidget() {
+    return {
+        open: false,
+        messages: [],
+        inputMessage: '',
+        isTyping: false,
+
+        async sendMessage() {
+            if (!this.inputMessage.trim()) return;
+
+            const userMessage = this.inputMessage.trim();
+            this.inputMessage = '';
+
+            // Add user message
+            this.addMessage('user', userMessage);
+
+            // Show typing indicator
+            this.isTyping = true;
+            this.scrollToBottom();
+
+            try {
+                // Send to backend
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                const data = await response.json();
+
+                // Add AI response
+                this.addMessage('assistant', data.response || data.error || 'Sorry, I encountered an error.');
+
+                // Trigger scraping if the response suggests it
+                if (userMessage.toLowerCase().includes('scrape') || userMessage.toLowerCase().includes('find jobs')) {
+                    if (typeof startScraping === 'function') {
+                        startScraping();
+                    }
+                }
+
+            } catch (error) {
+                this.addMessage('assistant', 'Sorry, I couldn\'t process your request. Please try again.');
+            } finally {
+                this.isTyping = false;
+                this.scrollToBottom();
+            }
+        },
+
+        sendQuickAction(action) {
+            this.inputMessage = action;
+            this.sendMessage();
+        },
+
+        addMessage(role, content) {
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            this.messages.push({ role, content, time });
+            this.$nextTick(() => this.scrollToBottom());
+        },
+
+        scrollToBottom() {
+            this.$nextTick(() => {
+                const container = this.$refs.messagesContainer;
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            });
+        },
+
+        clearChat() {
+            if (confirm('Clear chat history?')) {
+                this.messages = [];
+            }
+        }
+    };
+}
+</script>

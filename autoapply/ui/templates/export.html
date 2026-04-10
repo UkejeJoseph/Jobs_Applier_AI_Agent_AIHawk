@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Export CSV - AutoApply{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <h1 class="text-2xl font-bold text-gray-900">Export to CSV</h1>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <p class="text-gray-600 mb-4">
+            CSV files are exported to: <code class="bg-gray-100 px-2 py-1 rounded">{{ logs_dir }}</code>
+        </p>
+
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Exported Files</h2>
+
+        <table class="w-full">
+            <thead>
+                <tr class="text-left text-sm text-gray-500 border-b">
+                    <th class="pb-3">File</th>
+                    <th class="pb-3 text-right">Jobs</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for country, count in results.items() %}
+                <tr>
+                    <td class="py-4">
+                        <span class="text-2xl mr-2">
+                            {% if country == 'US' %}🇺🇸{% elif country == 'UK' %}🇬🇧{% elif country == 'Canada' %}🇨🇦{% elif country == 'Nigeria' %}🇳🇬{% endif %}
+                        </span>
+                        <code class="bg-gray-100 px-2 py-1 rounded">{{ country }}_jobs.csv</code>
+                    </td>
+                    <td class="py-4 text-right font-semibold">{{ count }} jobs</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="mt-6 pt-6 border-t">
+            <h3 class="font-semibold text-gray-900 mb-2">CSV Columns (12)</h3>
+            <ol class="list-decimal list-inside text-sm text-gray-600 grid grid-cols-2 md:grid-cols-4 gap-2">
+                <li>Company</li>
+                <li>Role</li>
+                <li>Location</li>
+                <li>Work Type</li>
+                <li>Visa Sponsored</li>
+                <li>Pay Range</li>
+                <li>Source</li>
+                <li>Date Applied</li>
+                <li>Status</li>
+                <li>Job URL</li>
+                <li>Resume Used</li>
+                <li>Cover Letter</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="bg-blue-50 rounded-lg p-4 text-sm text-blue-800">
+        <p><strong>Tip:</strong> Open CSV files in Excel, Google Sheets, or any spreadsheet app for full filtering and sorting.</p>
+    </div>
+</div>
+{% endblock %}

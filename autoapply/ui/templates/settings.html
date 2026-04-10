@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - AutoApply{% endblock %}
+
+{% block content %}
+<div class="p-6 space-y-6">
+    <!-- Header -->
+    <div>
+        <h1 class="text-2xl font-bold text-slate-800">Settings</h1>
+        <p class="text-slate-500">Configure your job search preferences</p>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Main Settings -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Profile Settings -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100">
+                    <h2 class="font-semibold text-slate-800">Profile</h2>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                            <input type="text" value="{{ user.name }}" disabled
+                                   class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                            <input type="email" value="{{ user.email }}" disabled
+                                   class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                        <input type="text" value="{{ user.location }}" disabled
+                               class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600">
+                    </div>
+                    <p class="text-xs text-slate-400">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Edit profile settings in <code class="bg-slate-100 px-1 rounded">autoapply/config.py</code>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Application Settings -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100">
+                    <h2 class="font-semibold text-slate-800">Application Settings</h2>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div class="flex items-center justify-between py-2">
+                        <div>
+                            <p class="font-medium text-slate-700">Max Applications Per Day</p>
+                            <p class="text-sm text-slate-500">Daily application limit</p>
+                        </div>
+                        <span class="text-lg font-semibold text-primary-600">{{ settings.max_applications_per_day }}</span>
+                    </div>
+                    <div class="flex items-center justify-between py-2">
+                        <div>
+                            <p class="font-medium text-slate-700">Run Interval</p>
+                            <p class="text-sm text-slate-500">Hours between automated runs</p>
+                        </div>
+                        <span class="text-lg font-semibold text-primary-600">{{ settings.run_interval_hours }} hours</span>
+                    </div>
+                    <div class="flex items-center justify-between py-2">
+                        <div>
+                            <p class="font-medium text-slate-700">Auto Generate Cover Letters</p>
+                            <p class="text-sm text-slate-500">Create tailored cover letters</p>
+                        </div>
+                        {% if settings.auto_generate_cover_letter %}
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Enabled</span>
+                        {% else %}
+                        <span class="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-sm font-medium">Disabled</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center justify-between py-2">
+                        <div>
+                            <p class="font-medium text-slate-700">Tailor Resume Per Job</p>
+                            <p class="text-sm text-slate-500">Customize resume for each application</p>
+                        </div>
+                        {% if settings.tailor_resume_per_job %}
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Enabled</span>
+                        {% else %}
+                        <span class="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-sm font-medium">Disabled</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anti-Bot Settings -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100">
+                    <h2 class="font-semibold text-slate-800">Anti-Bot Protection</h2>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div class="flex items-center justify-between py-2">
+                        <div>
+                            <p class="font-medium text-slate-700">Stealth Browser</p>
+                            <p class="text-sm text-slate-500">Use undetected-chromedriver for blocked sites</p>
+                        </div>
+                        {% if settings.use_stealth_browser %}
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Enabled</span>
+                        {% else %}
+                        <span class="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-sm font-medium">Disabled</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center justify-between py-2">
+                        <div>
+                            <p class="font-medium text-slate-700">Proxy Rotation</p>
+                            <p class="text-sm text-slate-500">Rotate IP addresses to avoid blocking</p>
+                        </div>
+                        {% if settings.use_proxy %}
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Enabled</span>
+                        {% else %}
+                        <span class="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-sm font-medium">Disabled</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center justify-between py-2">
+                        <div>
+                            <p class="font-medium text-slate-700">Captcha Solver</p>
+                            <p class="text-sm text-slate-500">Service: {{ settings.captcha_service }}</p>
+                        </div>
+                        <span class="text-sm text-slate-500">Set API key in env</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100">
+                    <h2 class="font-semibold text-slate-800">Quick Actions</h2>
+                </div>
+                <div class="p-4 space-y-3">
+                    <button onclick="startScraping()"
+                            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-colors">
+                        <i class="fas fa-search"></i>
+                        Find Jobs Now
+                    </button>
+                    <a href="/export"
+                       class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-medium transition-colors">
+                        <i class="fas fa-download"></i>
+                        Export All CSVs
+                    </a>
+                </div>
+            </div>
+
+            <!-- Links -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100">
+                    <h2 class="font-semibold text-slate-800">Your Links</h2>
+                </div>
+                <div class="p-4 space-y-3">
+                    <a href="{{ user.linkedin }}" target="_blank" rel="noopener"
+                       class="flex items-center gap-3 text-slate-600 hover:text-primary-600 transition-colors">
+                        <i class="fab fa-linkedin text-blue-600 w-5"></i>
+                        <span class="text-sm">LinkedIn Profile</span>
+                        <i class="fas fa-external-link-alt text-xs text-slate-400 ml-auto"></i>
+                    </a>
+                    <a href="{{ user.github }}" target="_blank" rel="noopener"
+                       class="flex items-center gap-3 text-slate-600 hover:text-primary-600 transition-colors">
+                        <i class="fab fa-github text-slate-800 w-5"></i>
+                        <span class="text-sm">GitHub Profile</span>
+                        <i class="fas fa-external-link-alt text-xs text-slate-400 ml-auto"></i>
+                    </a>
+                    <a href="{{ user.portfolio }}" target="_blank" rel="noopener"
+                       class="flex items-center gap-3 text-slate-600 hover:text-primary-600 transition-colors">
+                        <i class="fas fa-globe text-green-600 w-5"></i>
+                        <span class="text-sm">Portfolio Website</span>
+                        <i class="fas fa-external-link-alt text-xs text-slate-400 ml-auto"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- CLI Commands -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100">
+                    <h2 class="font-semibold text-slate-800">CLI Commands</h2>
+                </div>
+                <div class="p-4 space-y-3 text-sm">
+                    <div class="bg-slate-50 p-3 rounded-lg">
+                        <code class="text-slate-700">python -m autoapply.cli run</code>
+                        <p class="text-xs text-slate-500 mt-1">Run full pipeline</p>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg">
+                        <code class="text-slate-700">python -m autoapply.cli scrape</code>
+                        <p class="text-xs text-slate-500 mt-1">Preview jobs only</p>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg">
+                        <code class="text-slate-700">python -m autoapply.cli schedule</code>
+                        <p class="text-xs text-slate-500 mt-1">Start scheduler</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

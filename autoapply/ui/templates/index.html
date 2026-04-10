@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AutoApply{% endblock %}
+
+{% block content %}
+<div class="p-6 space-y-6">
+    <!-- Welcome Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Welcome back, {{ user.name.split()[0] }}!</h1>
+            <p class="text-slate-500">Here's your job application overview</p>
+        </div>
+        <button onclick="startScraping()"
+                class="sm:hidden flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors font-medium">
+            <i class="fas fa-search"></i>
+            <span>Find New Jobs</span>
+        </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-500">Total Jobs Found</p>
+                    <p class="text-3xl font-bold text-slate-800 mt-1">{{ stats.total_jobs if stats else 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-briefcase text-blue-600 text-xl"></i>
+                </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-3">Across all countries</p>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-500">Applied Today</p>
+                    <p class="text-3xl font-bold text-green-600 mt-1">{{ stats.applied_today if stats else 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-paper-plane text-green-600 text-xl"></i>
+                </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-3">/ 30 daily limit</p>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-500">Visa Sponsored</p>
+                    <p class="text-3xl font-bold text-purple-600 mt-1">{{ stats.visa_sponsored if stats else 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-passport text-purple-600 text-xl"></i>
+                </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-3">H1B, UK Skilled, LMIA</p>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-500">Interviews</p>
+                    <p class="text-3xl font-bold text-orange-600 mt-1">{{ stats.by_status.Interview if stats and stats.by_status else 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-calendar-check text-orange-600 text-xl"></i>
+                </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-3">In pipeline</p>
+        </div>
+    </div>
+
+    <!-- Quick Actions Hero -->
+    <div class="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 text-white">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold">Ready to find your next opportunity?</h2>
+                <p class="text-primary-100 mt-1">Click "Find Jobs" to scrape 10+ job boards for visa-sponsored positions</p>
+            </div>
+            <button onclick="startScraping()"
+                    id="hero-scrape-btn"
+                    class="flex items-center justify-center gap-2 px-6 py-3 bg-white text-primary-600 rounded-xl hover:bg-primary-50 transition-colors font-semibold whitespace-nowrap">
+                <i class="fas fa-rocket"></i>
+                <span>Find Jobs Now</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Jobs by Country Grid -->
+    <div class="grid md:grid-cols-2 gap-6">
+        <!-- USA Jobs -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🇺🇸</span>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">USA (H1B Visa)</h3>
+                        <p class="text-xs text-slate-500">Visa sponsorship required</p>
+                    </div>
+                </div>
+                <a href="/jobs/us" class="text-primary-600 hover:text-primary-700 text-sm font-medium">View all <i class="fas fa-arrow-right ml-1"></i></a>
+            </div>
+            <div class="p-4">
+                <div id="us-jobs-preview" class="space-y-3">
+                    <p class="text-sm text-slate-400 text-center py-4">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- UK Jobs -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🇬🇧</span>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">UK (Skilled Worker)</h3>
+                        <p class="text-xs text-slate-500">Sponsor license required</p>
+                    </div>
+                </div>
+                <a href="/jobs/uk" class="text-primary-600 hover:text-primary-700 text-sm font-medium">View all <i class="fas fa-arrow-right ml-1"></i></a>
+            </div>
+            <div class="p-4">
+                <div id="uk-jobs-preview" class="space-y-3">
+                    <p class="text-sm text-slate-400 text-center py-4">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canada Jobs -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🇨🇦</span>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">Canada (LMIA)</h3>
+                        <p class="text-xs text-slate-500">LMIA approved employers</p>
+                    </div>
+                </div>
+                <a href="/jobs/canada" class="text-primary-600 hover:text-primary-700 text-sm font-medium">View all <i class="fas fa-arrow-right ml-1"></i></a>
+            </div>
+            <div class="p-4">
+                <div id="canada-jobs-preview" class="space-y-3">
+                    <p class="text-sm text-slate-400 text-center py-4">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nigeria Jobs -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🇳🇬</span>
+                    <div>
+                        <h3 class="font-semibold text-slate-800">Nigeria (Remote)</h3>
+                        <p class="text-xs text-slate-500">Remote from Nigeria/EMEA</p>
+                    </div>
+                </div>
+                <a href="/jobs/nigeria" class="text-primary-600 hover:text-primary-700 text-sm font-medium">View all <i class="fas fa-arrow-right ml-1"></i></a>
+            </div>
+            <div class="p-4">
+                <div id="nigeria-jobs-preview" class="space-y-3">
+                    <p class="text-sm text-slate-400 text-center py-4">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Job Sources Info -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <h3 class="font-semibold text-slate-800 mb-4">Job Sources (40+ Sites)</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 text-sm">
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                LinkedIn
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                Indeed
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                Glassdoor
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                Greenhouse
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                Ashby
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                Job Bank CA
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                UK Gov List
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                Wellfound
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                Remote.com
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                RemoteAfrica
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                Twitter/X
+            </div>
+            <div class="flex items-center gap-2 text-slate-600">
+                <i class="fas fa-check-circle text-green-500"></i>
+                + 30 more
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load job previews for each country
+    async function loadJobPreviews() {
+        const countries = ['us', 'uk', 'canada', 'nigeria'];
+
+        for (const country of countries) {
+            try {
+                const response = await fetch(`/api/jobs?country=${country}&limit=3`);
+                const data = await response.json();
+
+                const container = document.getElementById(`${country}-jobs-preview`);
+
+                if (data.jobs && data.jobs.length > 0) {
+                    container.innerHTML = data.jobs.map(job => {
+                        // Handle both object and array formats
+                        const company = job.company || job[0] || 'Unknown';
+                        const role = job.role || job[1] || 'Unknown';
+                        const location = job.location || job[2] || '';
+                        const visaSponsored = job.visa_sponsored || job[4] === 'Yes';
+                        const salary = job.pay_range || job[5] || 'Salary N/A';
+                        const url = job.job_url || job[6] || '#';
+
+                        return `
+                            <a href="${url}" target="_blank" rel="noopener" class="block p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors group">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="font-medium text-slate-800 truncate group-hover:text-primary-600">${role}</p>
+                                        <p class="text-sm text-slate-500 truncate">${company}</p>
+                                    </div>
+                                    ${visaSponsored ?
+                                        '<span class="shrink-0 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">Visa</span>' :
+                                        ''}
+                                </div>
+                                <div class="flex items-center gap-2 mt-2 text-xs text-slate-400">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span class="truncate">${location}</span>
+                                    <span>•</span>
+                                    <span class="truncate">${salary}</span>
+                                </div>
+                            </a>
+                        `;
+                    }).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-6">
+                            <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <i class="fas fa-inbox text-slate-400"></i>
+                            </div>
+                            <p class="text-sm text-slate-500 mb-2">No jobs found yet</p>
+                            <button onclick="startScraping()" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                                <i class="fas fa-search mr-1"></i> Find jobs
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error(`Error loading ${country} jobs:`, error);
+                document.getElementById(`${country}-jobs-preview`).innerHTML = `
+                    <p class="text-sm text-red-500 text-center py-4">Failed to load</p>
+                `;
+            }
+        }
+    }
+
+    // Load on page load
+    document.addEventListener('DOMContentLoaded', loadJobPreviews);
+</script>
+{% endblock %}

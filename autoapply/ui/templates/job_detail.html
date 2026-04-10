@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.role }} at {{ job.company }} - AutoApply{% endblock %}
+
+{% block content %}
+<div class="p-6 space-y-6 max-w-5xl mx-auto">
+    <!-- Top Actions Bar -->
+    <div class="flex items-center justify-between">
+        <a href="{{ request.referrer or '/jobs/all' }}" class="flex items-center gap-2 text-slate-500 hover:text-slate-700">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Jobs</span>
+        </a>
+        <div class="flex items-center gap-2">
+            <button onclick="window.open('{{ job.job_url }}', '_blank')" class="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600">
+                <i class="fas fa-external-link-alt"></i>
+                Job Board
+            </button>
+            <button onclick="quickApply('{{ job.job_id }}')" class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                <i class="fas fa-bolt"></i>
+                Quick Apply
+            </button>
+            <button onclick="autoApply('{{ job.job_id }}')" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+                <i class="fas fa-robot"></i>
+                Auto Apply
+            </button>
+        </div>
+    </div>
+
+    <!-- Job Header Card -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div class="flex items-start justify-between">
+            <div class="flex items-start gap-4">
+                <!-- Company Logo Placeholder -->
+                <div class="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center text-2xl font-bold text-slate-400">
+                    {{ job.company[0]|upper }}
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">{{ job.role }}</h1>
+                    <p class="text-lg text-slate-600">{{ job.company }}</p>
+                    <div class="flex items-center gap-4 mt-2 text-sm text-slate-500">
+                        <span class="flex items-center gap-1">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {{ job.location }}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fas fa-clock"></i>
+                            {{ job.date_posted or 'Recently' }}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fas fa-globe"></i>
+                            {{ job.source }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Priority Badge -->
+            {% set priority_info = {
+                5: ('emerald', 'Tier 1: Sponsor + Remote', 'fa-star'),
+                4: ('blue', 'Tier 2: Sponsor + Onsite', 'fa-building'),
+                3: ('purple', 'Tier 3: Remote EMEA', 'fa-globe-africa'),
+                2: ('orange', 'Tier 4: Known Sponsor', 'fa-check-circle'),
+                1: ('slate', 'Tier 5: Other', 'fa-circle')
+            } %}
+            {% set p_color, p_label, p_icon = priority_info.get(job.priority.value if job.priority else 1, ('slate', 'Tier 5', 'fa-circle')) %}
+            <div class="flex items-center gap-2 px-3 py-1.5 bg-{{ p_color }}-100 text-{{ p_color }}-700 rounded-full text-sm font-medium">
+                <i class="fas {{ p_icon }}"></i>
+                {{ p_label }}
+            </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="flex flex-wrap gap-2 mt-4">
+            <!-- Work Type -->
+            {% if 'remote' in job.work_type.value|lower %}
+            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                <i class="fas fa-home mr-1"></i> Remote
+            </span>
+            {% elif 'hybrid' in job.work_type.value|lower %}
+            <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                <i class="fas fa-building mr-1"></i> Hybrid
+            </span>
+            {% else %}
+            <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+                <i class="fas fa-building mr-1"></i> On-site
+            </span>
+            {% endif %}
+
+            <!-- Visa -->
+            {% if job.visa_sponsored %}
+            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                <i class="fas fa-passport mr-1"></i> Visa Sponsored
+            </span>
+            {% endif %}
+
+            <!-- Country -->
+            {% set country_flags = {'US': '🇺🇸', 'UK': '🇬🇧', 'Canada': '🇨🇦', 'Nigeria': '🇳🇬'} %}
+            <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
+                {{ country_flags.get(job.country.value, '🌍') }} {{ job.country.value }}
+            </span>
+
+            <!-- Salary -->
+            {% if job.pay_range and job.pay_range != 'Not Listed' %}
+            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
+                <i class="fas fa-dollar-sign mr-1"></i> {{ job.pay_range }}
+            </span>
+            {% endif %}
+
+            <!-- Status -->
+            {% set status_colors = {
+                'Found': 'bg-blue-100 text-blue-700',
+                'Applied': 'bg-green-100 text-green-700',
+                'Interview': 'bg-purple-100 text-purple-700',
+                'Offer': 'bg-emerald-100 text-emerald-700',
+                'Rejected': 'bg-red-100 text-red-700',
+                'Skipped': 'bg-slate-100 text-slate-500'
+            } %}
+            <span class="px-3 py-1 rounded-full text-sm font-medium {{ status_colors.get(job.status.value, 'bg-slate-100') }}">
+                {{ job.status.value }}
+            </span>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="flex items-center gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button onclick="updateJobStatus('{{ job.job_id }}', 'Applied')" class="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-sm">
+                <i class="fas fa-check text-green-500"></i>
+                Mark Applied
+            </button>
+            <button onclick="saveJob('{{ job.job_id }}')" class="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-sm">
+                <i class="fas fa-bookmark text-yellow-500"></i>
+                Save
+            </button>
+            <button onclick="updateJobStatus('{{ job.job_id }}', 'Skipped')" class="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-sm">
+                <i class="fas fa-forward text-slate-400"></i>
+                Pass
+            </button>
+            <button onclick="shareJob('{{ job.job_id }}')" class="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-sm">
+                <i class="fas fa-share text-blue-500"></i>
+                Share
+            </button>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- About This Role -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-primary-500"></i>
+                    About This Role
+                </h2>
+                <div class="prose prose-slate max-w-none">
+                    {% if job.description %}
+                    <p class="text-slate-600 whitespace-pre-line">{{ job.description }}</p>
+                    {% else %}
+                    <p class="text-slate-400 italic">No description available. Click "Job Board" to view the full posting.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Required Qualifications (Parsed from description) -->
+            {% if job.description %}
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-list-check text-green-500"></i>
+                    Key Requirements
+                </h2>
+                <ul class="space-y-2">
+                    {% set keywords = ['python', 'java', 'javascript', 'typescript', 'react', 'node', 'aws', 'kubernetes', 'docker', 'sql', 'postgresql', 'mongodb', 'redis', 'spring', 'microservices', 'api', 'rest', 'graphql', 'agile', 'ci/cd'] %}
+                    {% for keyword in keywords %}
+                        {% if keyword in job.description|lower %}
+                        <li class="flex items-start gap-2 text-slate-600">
+                            <i class="fas fa-check text-green-500 mt-1"></i>
+                            <span>{{ keyword|title }}</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Company Info -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                <h3 class="text-sm font-semibold text-slate-800 mb-4">Company Info</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-building text-slate-400"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium text-slate-800">{{ job.company }}</p>
+                            <p class="text-xs text-slate-500">{{ job.location }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Application Timeline -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                <h3 class="text-sm font-semibold text-slate-800 mb-4">Application Timeline</h3>
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-search text-blue-500 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-800">Found</p>
+                            <p class="text-xs text-slate-500">{{ job.date_found.strftime('%b %d, %Y') if job.date_found else 'Unknown' }}</p>
+                        </div>
+                    </div>
+                    {% if job.date_applied %}
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-paper-plane text-green-500 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-800">Applied</p>
+                            <p class="text-xs text-slate-500">{{ job.date_applied.strftime('%b %d, %Y') }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Resume Used -->
+            {% if job.resume_used %}
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                <h3 class="text-sm font-semibold text-slate-800 mb-4">Application Details</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Resume:</span>
+                        <span class="text-slate-800">{{ job.resume_used }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Cover Letter:</span>
+                        <span class="text-slate-800">{{ 'Yes' if job.cover_letter_generated else 'No' }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function quickApply(jobId) {
+        window.open('{{ job.job_url }}', '_blank');
+        showToast('Opening job page...', 'info');
+    }
+
+    async function autoApply(jobId) {
+        if (!confirm('Start auto-apply? This will fill out the application form automatically.')) return;
+
+        showToast('Starting auto-apply...', 'info');
+        try {
+            const response = await fetch(`/api/apply/${jobId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast('Auto-apply started!', 'success');
+            } else {
+                showToast('Failed: ' + data.error, 'error');
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+        }
+    }
+
+    async function updateJobStatus(jobId, status) {
+        try {
+            const response = await fetch(`/api/job/${jobId}/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: status })
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast(`Job marked as ${status}`, 'success');
+                setTimeout(() => location.reload(), 500);
+            }
+        } catch (error) {
+            showToast('Error updating status', 'error');
+        }
+    }
+
+    function saveJob(jobId) {
+        showToast('Job saved!', 'success');
+    }
+
+    function shareJob(jobId) {
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ job.role }} at {{ job.company }}',
+                url: window.location.href
+            });
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+            showToast('Link copied!', 'success');
+        }
+    }
+</script>
+{% endblock %}
